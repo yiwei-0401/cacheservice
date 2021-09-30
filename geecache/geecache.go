@@ -10,6 +10,7 @@ type Group struct {
 	name string
 	getter Getter //回调函数
 	mainCache cache
+	peers PeerPicker
 }
 
 var (
@@ -39,6 +40,7 @@ func GetGroup(name string) *Group {
 	return g
 }
 
+//获取key的信息
 func (g *Group) Get(key string) (ByteView, error) {
 	if key == "" {
 		return ByteView{}, fmt.Errorf("key is requied")
@@ -51,8 +53,24 @@ func (g *Group) Get(key string) (ByteView, error) {
 	return g.load(key)
 }
 
-func (g *Group) load(key  string) (value ByteView, err error) {
+func (g *Group) load(key string) (value ByteView, err error) {
+	if g.peers != nil {
+		if peer, ok := g.peers.PickPeer(key); ok {
+			if value, err = g.getFromPeer(peer, key); err == nil {
+				return value, nil
+			}
+			log.Println("[GeeCache] Failed to get from peer", err)
+		}
+	}
 	return g.getLocally(key)
+}
+
+func (g *Group) getFromPeer(peer PeerGetter, key string) (ByteView, error) {
+	bytes, err := peer.Get(g.name, key)
+	if err != nil {
+		return ByteView{}, err
+	}
+	return ByteView{b:bytes}, nil
 }
 
 func (g *Group) getLocally(key string) (ByteView, error) {
@@ -81,4 +99,11 @@ type GetterFunc func(key string) ([]byte, error)
 //函数类型实现接口：接口型函数。 方便调用时既能传入函数作为参数，也能传入实现接口的结构体做参数
 func (f GetterFunc) Get(key string) ([]byte, error) {
 	return f(key)
+}
+
+func (g *Group) RegisterPeers(peers PeerPicker) {
+	if g.peers != nil {
+		panic("RegisterPeerPicker called more than once")
+	}
+	g.peers = peers
 }
