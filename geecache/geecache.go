@@ -11,8 +11,8 @@ type Group struct {
 	name string
 	getter Getter //回调函数
 	mainCache cache
-	peers PeerPicker
 
+	peers PeerPicker
 	loader *singlefight.Group
 }
 
@@ -100,10 +100,12 @@ func (g *Group) populateCache(key string, value ByteView) {
 	g.mainCache.add(key, value)
 }
 
+//回调函数
 type Getter interface {
 	Get(key string) ([]byte, error)
 }
 
+//函数类型
 type GetterFunc func(key string) ([]byte, error)
 
 //函数类型实现接口：接口型函数。 方便调用时既能传入函数作为参数，也能传入实现接口的结构体做参数

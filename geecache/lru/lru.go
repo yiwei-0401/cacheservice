@@ -1,13 +1,15 @@
 package lru
 
-import "container/list"
+import (
+	"container/list"
+)
 
 type Cache struct {
-	maxBtyes int64
-	nbytes int64
-	ll *list.List
-	cache map[string]*list.Element
-	Onevicted func(key string, value Value)
+	maxBtyes int64 //最大容量
+	nbytes int64 //当前使用
+	ll *list.List //双向链表
+	cache map[string]*list.Element //map
+	Onevicted func(key string, value Value) //回调
 }
 
 type entry struct {
@@ -32,6 +34,7 @@ func (c *Cache) Get(key string) (value Value, ok bool) {
 	//命中后把节点移到队尾， 返回值
 	if ele, ok := c.cache[key]; ok {
 		c.ll.MoveToFront(ele)
+		//类型断言
 		kv := ele.Value.(*entry)
 		return kv.value, true
 	}
@@ -53,6 +56,7 @@ func (c *Cache) RemoveOldest() {
 }
 
 func (c *Cache) Add(key string, value Value)  {
+	//有用的移到前面
 	if ele, ok := c.cache[key]; ok {
 		c.ll.MoveToFront(ele)
 		kv := ele.Value.(*entry)

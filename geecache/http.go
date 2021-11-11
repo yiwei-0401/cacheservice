@@ -20,6 +20,7 @@ const (
 type HTTPPool struct {
 	self string
 	basePath string
+
 	mu sync.Mutex
 	peers *consistenthash.Map
 	httpGetters map[string]*httpGetter
